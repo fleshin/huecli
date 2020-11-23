@@ -12,35 +12,35 @@ const (
 	USER string = "TmyIhrQ4A3TmcduWcp6RGJliXkxEUpdXa97444HE"
 )
 
-var CLI struct {
-	Register struct {
-		Username string `arg name:"username" help:"User to register on the bridge." type:"string"`
-	} `cmd help:"Detect bridge and authenticate a user. You should press the bridge button before."`
-
-	Turn struct {
-		On struct {
-			Id int `arg name:"id" help:"ID of the light to turn on." type:"int"`
-		} `cmd help:"Turn on light."`
-		Off struct {
-			Id int `arg name:"id" help:"ID of the light to turn off." type:"int"`
-		} `cmd help:"Turn off light."`
-	} `cmd help:"Switch a light."`
-
-	List struct {
-	} `cmd help:"List lights."`
-
-	Dim struct {
-		Intensity uint8 `arg name:"intensity" help:"Intensity of the light from 0 to 255." type:"uint8"`
-		Id        int   `arg name:"id" help:"ID of the light to dim." type:"int"`
-	} `cmd help:"Dim lights."`
-
-	Temp struct {
-		Deg uint16 `arg name:"deg" help:"Color of the light 153 to 500 mireks." type:"uint16"`
-		Id  int    `arg name:"id" help:"ID of the light to dim." type:"int"`
-	} `cmd help:"Set lights color temperature."`
-}
-
 func main() {
+	var CLI struct {
+		Register struct {
+			Username string `arg:"" name:"username" help:"User to register on the bridge." type:"string"`
+		} `cmd:"" help:"Detect bridge and authenticate a user. You should press the bridge button before."`
+
+		Turn struct {
+			On struct {
+				ID int `arg:"" name:"id" help:"ID of the light to turn on." type:"int"`
+			} `cmd:"" help:"Turn on light."`
+			Off struct {
+				ID int `arg:"" name:"id" help:"ID of the light to turn off." type:"int"`
+			} `cmd:"" help:"Turn off light."`
+		} `cmd:"" help:"Switch a light."`
+
+		List struct {
+		} `cmd:"" help:"List lights."`
+
+		Dim struct {
+			Intensity uint8 `arg:"" name:"intensity" help:"Intensity of the light from 0 to 255." type:"uint8"`
+			ID        int   `arg:"" name:"id" help:"ID of the light to dim." type:"int"`
+		} `cmd:"" help:"Dim lights."`
+
+		Temp struct {
+			Deg uint16 `arg:"" name:"deg" help:"Color of the light 153 to 500 mireks." type:"uint16"`
+			ID  int    `arg:"" name:"id" help:"ID of the light to dim." type:"int"`
+		} `cmd:"" help:"Set lights color temperature."`
+	}
+
 	ctx := kong.Parse(&CLI)
 	switch ctx.Command() {
 	case "list":
@@ -48,16 +48,16 @@ func main() {
 		list(ses)
 	case "turn on <id>":
 		ses := getSession()
-		turnlight(ses, true, CLI.Turn.On.Id)
+		turnlight(ses, true, CLI.Turn.On.ID)
 	case "turn off <id>":
 		ses := getSession()
-		turnlight(ses, false, CLI.Turn.Off.Id)
+		turnlight(ses, false, CLI.Turn.Off.ID)
 	case "dim <intensity> <id>":
 		ses := getSession()
-		dimlight(ses, CLI.Dim.Intensity, CLI.Dim.Id)
+		dimlight(ses, CLI.Dim.Intensity, CLI.Dim.ID)
 	case "temp <deg> <id>":
 		ses := getSession()
-		templight(ses, CLI.Temp.Deg, CLI.Temp.Id)
+		templight(ses, CLI.Temp.Deg, CLI.Temp.ID)
 	default:
 		//flag.PrintDefaults()
 		os.Exit(1)
