@@ -1,22 +1,25 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"os"
+	"os/user"
 
 	"github.com/alecthomas/kong"
 	"github.com/amimof/huego"
 )
 
-const (
-	USER string = "TmyIhrQ4A3TmcduWcp6RGJliXkxEUpdXa97444HE"
-)
+//Config stores user preferences
+type Config struct {
+	User string
+}
 
 func main() {
 	var CLI struct {
-		Register struct {
-			Username string `arg:"" name:"username" help:"User to register on the bridge." type:"string"`
-		} `cmd:"" help:"Detect bridge and authenticate a user. You should press the bridge button before."`
+		Register struct{} `cmd:"" help:"Detect bridge and authenticate a user. You should press the bridge button before."`
 
 		Turn struct {
 			On struct {
@@ -58,6 +61,8 @@ func main() {
 	case "temp <deg> <id>":
 		ses := getSession()
 		templight(ses, CLI.Temp.Deg, CLI.Temp.ID)
+	case "register":
+		register()
 	default:
 		//flag.PrintDefaults()
 		os.Exit(1)
@@ -111,19 +116,62 @@ func count() {
 }
 
 func register() {
+	var conf Config
 	bridge, _ := huego.Discover()
-	user, _ := bridge.CreateUser("huego") // Link button needs to be pressed
-	fmt.Println("User: " + user)
-	bridge = bridge.Login(user)
-	light, _ := bridge.GetLight(3)
-	light.Off()
+	usr, err := bridge.CreateUser("huecli") // Link button needs to be pressed
+	if err != nil {
+		panic(err)
+	}
+	conf.User = usr
+	err = writeConfig(&conf)
+	if err != nil {
+		log.Fatal(err)
+	} else {
+		fmt.Println("Successfully registered huecli.")
+	}
 }
 
 func getSession() *huego.Bridge {
+	conf, err := readConfig()
+	if err != nil {
+		log.Fatal("Cannot open configuration. Please register with the hub. Error:" + err.Error())
+	}
 	bridge, err := huego.Discover()
 	if err != nil {
 		panic(err)
 	}
-	bridge = bridge.Login(USER)
+	bridge = bridge.Login(conf.User)
 	return bridge
+}
+
+func readConfig() (*Config, error) {
+	// initialize conf with default values.
+	conf := &Config{User: ""}
+	osusr, err := user.Current()
+	b, err := ioutil.ReadFile(osusr.HomeDir + "/.huecli.conf")
+	if err != nil {
+		return nil, err
+	}
+	if err = json.Unmarshal(b, conf); err != nil {
+		return nil, err
+	}
+	return conf, nil
+}
+
+func writeConfig(conf *Config) error {
+	var jsonData []byte
+	jsonData, err := json.Marshal(conf)
+	if err != nil {
+		log.Println(err)
+	}
+	osusr, err := user.Current()
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(osusr.HomeDir+"/.huecli.conf", jsonData, 0600)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
